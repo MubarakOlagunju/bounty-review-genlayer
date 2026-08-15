@@ -80,3 +80,11 @@ Accounts are stored in browser's localStorage for development convenience.
 - **Submit Work**: Developers can submit work URLs for trustless AI evaluation via GenLayer's GenVM  
 - **AI Evaluation** Logs: Track recent submission evaluations, passing statuses, and automated feedback  - **Glass-morphism UI**: Premium dark theme with backdrop blur effects and smooth animations  
 - **Real-time** Updates: Automatic data fetching via TanStack Query 
+
+
+Smart Contract & Consensus Logic
+The complete Intelligent Contract source code can be found in /contracts/bounty_contract.py.
+
+Evaluation & Validator Logic: Utilizes GenVM's gl.nondet.exec_prompt to achieve AI consensus on submission quality.
+
+State Transitions & Payout: The contract autonomously updates is_open, logs the winner_address, and locks the escrow state once the criteria are met.
