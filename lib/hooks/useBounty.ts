@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
 import BountyContract from "../contracts/BountyContract";
@@ -58,7 +57,6 @@ export function useSubmitWork() {
   const contract = useBountyContract();
   const { address } = useWallet();
   const queryClient = useQueryClient();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [submissions, setSubmissions] = useState<Array<{url: string, status: 'pending' | 'success' | 'failed'}>>([]);
 
@@ -95,7 +93,6 @@ export function useSubmitWork() {
         const filtered = prev.filter(s => s.url !== submissionUrl); // Remove duplicates if submitted twice
         return [{ url: submissionUrl, status: 'pending' }, ...filtered];
       });
-      setIsSubmitting(true);
       
       return contract.evaluateSubmission(submissionUrl, address);
     },
@@ -111,7 +108,6 @@ export function useSubmitWork() {
       });
       
       await queryClient.invalidateQueries({ queryKey: ["bountyData"] });
-      setIsSubmitting(false);
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (err: any, variables) => {
@@ -126,14 +122,12 @@ export function useSubmitWork() {
           return [{ url: variables.submissionUrl, status: 'failed' }, ...prev];
         }
       });
-      
-      setIsSubmitting(false);
     },
   });
 
   return {
     ...mutation,
-    isSubmitting,
+    isSubmitting: mutation.isPending, // React Query now natively controls the UI lock!
     submissions,
     submitWork: (submissionUrl: string) => mutation.mutate({ submissionUrl }),
   };

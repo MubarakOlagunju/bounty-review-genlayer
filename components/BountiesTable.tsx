@@ -19,7 +19,10 @@ export function BountiesTable() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!submissionUrl || !address) return;
+    
     submitWork(submissionUrl);
+    
+    // This clears the input field immediately so it is ready for the next link
     setSubmissionUrl("");
   };
 
@@ -53,6 +56,7 @@ export function BountiesTable() {
               onChange={(e) => setSubmissionUrl(e.target.value)}
               placeholder="https://github.com/your-repo"
               className="w-full bg-white/5 border border-white/10 rounded-md px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 transition-colors"
+              disabled={isSubmitting} 
             />
           </div>
           <Button type="submit" disabled={isSubmitting || !submissionUrl || !address}>
