@@ -88,13 +88,13 @@ export function useSubmitWork() {
       if (!contract) throw new Error("Contract not configured.");
       if (!address || !address.startsWith("0x")) throw new Error("Invalid wallet state.");
       
-      // Safely add 'pending' state
       setSubmissions(prev => {
-        const filtered = prev.filter(s => s.url !== submissionUrl); // Remove duplicates if submitted twice
+        const filtered = prev.filter(s => s.url !== submissionUrl); 
         return [{ url: submissionUrl, status: 'pending' }, ...filtered];
       });
       
-      return contract.evaluateSubmission(submissionUrl, address);
+      // REMOVED 'address' argument. The wallet provider will securely sign the transaction as the sender.
+      return contract.evaluateSubmission(submissionUrl);
     },
     onSuccess: async (data, variables) => {
       // Safely force the 'success' state, even if execution was instant

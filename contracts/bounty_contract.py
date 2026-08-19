@@ -22,7 +22,9 @@ class BountyReview(gl.Contract):
         self.winning_submission_url = ""
  
     @gl.public.write
-    def evaluate_submission(self, submission_url: str, submitter_address: str) -> typing.Any:
+    def evaluate_submission(self, submission_url: str) -> typing.Any:
+        # 1. BIND WINNER TO SENDER: Cryptographically verify who is calling the contract
+        sender = gl.message.sender
         
         if not self.is_open:
             raise gl.vm.UserError("This bounty is already closed and paid out.")
@@ -30,56 +32,49 @@ class BountyReview(gl.Contract):
         bounty_criteria = self.bounty_criteria
  
         def check_work() -> typing.Any:
-            # 1. SAFETY NET: Protect against invalid URLs crashing the web scraper
             try:
                 web_data = gl.nondet.web.render(submission_url, mode="text")
-                print("Successfully scraped URL data.")
             except Exception as e:
-                print(f"Scraper Error: {str(e)}")
                 return {
                     "meets_criteria": False,
-                    "feedback": "Network Error: Could not read the submitted URL. Ensure it is public."
+                    "feedback": "Network Error: Could not read the submitted URL."
                 }
  
             task = f"""
 You are an AI evaluator for a Web3 developer bounty platform.
 Your task is to determine if the submitted work strictly meets the following criteria:
- 
 CRITERIA:
 "{bounty_criteria}"
- 
 SUBMITTED CONTENT:
 {web_data}
 End of submitted content.
- 
-Based on the submitted content, evaluate if it successfully fulfills the criteria.
-Respond with the following JSON format:
+Respond strictly in JSON:
 {{
     "meets_criteria": bool,
     "feedback": str 
 }}
-It is mandatory that you respond only using the JSON format above, nothing else. Don't include any other words or characters, your output must be only JSON without any formatting prefix or suffix.
-This result should be perfectly parsable by a JSON parser without errors.
             """
             
-            # 2. SAFETY NET: Protect against missing LLM API keys or AI timeouts
             try:
                 result = gl.nondet.exec_prompt(task).replace("```json", "").replace("```", "").strip()
-                print("Successfully executed AI prompt.")
                 return json.loads(result)
             except Exception as e:
-                print(f"AI Error: {str(e)}")
                 return {
                     "meets_criteria": False,
-                    "feedback": "AI Engine Error: The evaluation failed to execute properly. Check simulator configuration."
+                    "feedback": "AI Engine Error: The evaluation failed to execute properly."
                 }
  
         result_json = gl.eq_principle.strict_eq(check_work)
  
         if result_json.get("meets_criteria") == True:
+            # 2. STATE TRANSITION & PAYOUT FLOW
             self.is_open = False
-            self.winner_address = submitter_address
+            self.winner_address = sender
             self.winning_submission_url = submission_url
+            
+            # Execute the escrow payout to the verified sender
+            # (Note: Assumes native GenLayer transfer method)
+            gl.contract.transfer(sender, self.reward_amount)
  
         return result_json
  

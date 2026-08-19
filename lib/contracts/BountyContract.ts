@@ -41,8 +41,9 @@ export default class BountyContract {
    * Submits a URL for AI evaluation and strict consensus validation.
    * Maps to @gl.public.write def evaluate_submission()
    */
- async evaluateSubmission(submissionUrl: string, submitterAddress: string): Promise<TransactionReceipt> {
-    if (!submitterAddress || !submitterAddress.startsWith("0x")) {
+  async evaluateSubmission(submissionUrl: string): Promise<TransactionReceipt> {
+    // Rely on the securely stored userAddress from the class constructor
+    if (!this.userAddress || !this.userAddress.startsWith("0x")) {
       throw new Error("Invalid wallet address. Please disconnect and reconnect your wallet.");
     }
 
@@ -50,9 +51,9 @@ export default class BountyContract {
       const tx = await this.client.writeContract({
         address: this.contractAddress as `0x${string}`,
         functionName: "evaluate_submission",
-        args: [submissionUrl, submitterAddress],
-        // THE FIX: Wrap the string in an object so the SDK can successfully read account.address
-        account: { address: submitterAddress as `0x${string}` } as any,
+        args: [submissionUrl], // THE FIX: Only sending the URL to the Python contract now
+        // Securely pass the wallet address to the SDK for the transaction signature
+        account: { address: this.userAddress as `0x${string}` } as any,
         value: 0n, 
       });
       
